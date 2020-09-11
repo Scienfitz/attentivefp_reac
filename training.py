@@ -94,10 +94,10 @@ def main(args):
     df = pd.read_csv(input_file, sep=None, engine='python', nrows=100 if args.test else None)
     logger.info(f'Imported {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
-    task_cols = args.task_cols
+    task_cols  = args.task_cols
     smiles_col = args.smiles_col
-    id_col = args.id_col
-    grp_col = args.split_column
+    id_col     = args.id_col
+    grp_col    = args.split_column
 
     logger.info(f'Using task columns {",".join(task_cols)} for training')
 

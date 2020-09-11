@@ -20,21 +20,21 @@ def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epoc
         seed = np.random.randint(1000)
 
     space = {
-        'node_feat_size': hyperparams['node_feat_size'],
-        'edge_feat_size': hyperparams['edge_feat_size'],
-        'num_layers': hp.quniform('num_layers', 1, 4, 1),
-        'num_timesteps': hp.quniform('num_timesteps', 1, 4, 1),
+        'node_feat_size':  hyperparams['node_feat_size'],
+        'edge_feat_size':  hyperparams['edge_feat_size'],
+        'num_layers':      hp.quniform('num_layers', 1, 4, 1),
+        'num_timesteps':   hp.quniform('num_timesteps', 1, 4, 1),
         'graph_feat_size': hp.quniform('graph_feat_size', 150, 400, 10),
-        'dropout': hp.quniform('dropout', 0, 0.5, 0.05),
-        'n_units': hp.quniform('n_units', 100, 500, 25),
-        'n_dense': hp.quniform('n_dense', 0, 3, 1),
-        'lr': hp.quniform('lr', -4.0, -3.0, 0.05),
+        'dropout':         hp.quniform('dropout', 0, 0.5, 0.05),
+        'n_units':         hp.quniform('n_units', 100, 500, 25),
+        'n_dense':         hp.quniform('n_dense', 0, 3, 1),
+        'lr':              hp.quniform('lr', -4.0, -3.0, 0.05),
         'weight_decay': 0,
         'batch_size': 128
     }
 
     local_dataloader = DataLoader(
-        list(zip(graphs, task_labels, mask_missing)),
+        list(zip(graphs, task_labels, mask_missing)),z
         batch_size=128,
         shuffle=True,
         num_workers=0,
@@ -42,16 +42,15 @@ def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epoc
     )
 
     def hp_objective(hyp):
-
-        local_model = AttentiveFPDense(node_feat_size=hyperparams['node_feat_size'],
-                                 edge_feat_size=hyperparams['edge_feat_size'],
-                                 num_layers=int(hyp['num_layers']),
-                                 num_timesteps=int(hyp['num_timesteps']),
-                                 graph_feat_size=int(hyp['graph_feat_size']),
-                                 dropout=hyp['dropout'],
-                                 n_dense=int(hyp['n_dense']),
-                                 n_units=int(hyp['n_units']),
-                                 n_tasks=task_labels.shape[1]
+        local_model = AttentiveFPDense(node_feat_size= hyperparams['node_feat_size'],
+                                 edge_feat_size      = hyperparams['edge_feat_size'],
+                                 num_layers          = int(hyp['num_layers']),
+                                 num_timesteps       = int(hyp['num_timesteps']),
+                                 graph_feat_size     = int(hyp['graph_feat_size']),
+                                 dropout             = hyp['dropout'],
+                                 n_dense             = int(hyp['n_dense']),
+                                 n_units             = int(hyp['n_units']),
+                                 n_tasks             = task_labels.shape[1]
                                  )
         local_model = local_model.to(device)
         local_optimizer = torch.optim.Adam(local_model.parameters(),
