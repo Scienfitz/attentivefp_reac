@@ -135,46 +135,6 @@ def collate_molgraphs(data):
     return bg, labels, masks
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AttentiveFPDense_tab(nn.Module):
     def __init__(self,
                  node_feat_size,
@@ -262,7 +222,7 @@ class EnsembleAttFP_tab(nn.Module):
 
 
 def collate_molgraphs_tab(data):
-    """Batching a list of datapoints for dataloader.
+    """Batching a list of datapoints for dataloader. Includes tabular features.
     Parameters
     ----------
     data : list of 3-tuples or 4-tuples.
@@ -281,13 +241,13 @@ def collate_molgraphs_tab(data):
         existence of labels. If binary masks are not
         provided, return a tensor with ones.
     """
-    assert len(data[0]) in [2, 3], \
-        'Expect the tuple to be of length 2 or 3, got {:d}'.format(len(data[0]))
-    if len(data[0]) == 2:
-        graphs, labels = map(list, zip(*data))
+    assert len(data[0]) in [3, 4], \
+        'Expect the tuple to be of length 3 or 4, got {:d}'.format(len(data[0]))
+    if len(data[0]) == 3:
+        graphs, labels, tabs = map(list, zip(*data))
         masks = None
     else:
-        graphs, labels, masks = map(list, zip(*data))
+        graphs, labels, tabs, masks = map(list, zip(*data))
 
     bg = dgl.batch(graphs)
 
@@ -299,9 +259,14 @@ def collate_molgraphs_tab(data):
     else:
         labels = torch.stack(labels, dim=0)
 
+    if tabs is None:
+        tabs = torch.zeros(tabs.shape)
+    else:
+        tabs = torch.stack(tabs, dim=0)
+
     if masks is None:
         masks = torch.ones(labels.shape)
     else:
         masks = torch.stack(masks, dim=0)
 
-    return bg, labels, masks
+    return bg, labels, tabs, masks
