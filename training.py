@@ -71,7 +71,9 @@ def parse_arguments():
     parser.add_argument('--skip_cv',          help='Do NOT perform any cross validation', action='store_true')
     parser.add_argument('--pretrained_model', help='pth model file location of trained AttentiveFPDense model', required=False)
     parser.add_argument('--seed',             help='Seed for data randomization, cross validation, boot strapping, and torch', required=False, type=int, default=None)
+    #### Added arguments
     parser.add_argument('--featurizer',       help='Featurizer Type (Default: Canonical)', action='store', required=False, default="Canonical", choices=['Canonical','Reaction','ReactionFP','AttentiveFP'])
+    parser.add_argument('--frac',             help='Only do calculations on a fraction of all data, e.g. 0.2', required=False, type=float, default=1.0)
     return parser.parse_args()
 
 
@@ -93,6 +95,10 @@ def main(args):
 
     df = pd.read_csv(input_file, sep=None, engine='python', nrows=100 if args.test else None)
     logger.info(f'Imported {df.shape[0]} rows with columns: {", ".join(df.columns)}')
+
+    if args.frac != 1.0:
+        df = df.sample(frac=args.frac)
+        logger.info(f'Reduced dataframe to {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
     task_cols  = args.task_cols
     smiles_col = args.smiles_col
