@@ -37,7 +37,6 @@ def preprocess(df, smiles_col, task_cols, id_col=None, grp_col=None, standardize
     df['_smiles'] = df['_mol'].apply(mol2smiles)
 
     # convert string columns
-
     mask_greater = df[task_cols].apply(lambda x: x.astype(str).str.contains('>'))
     mask_smaller = df[task_cols].apply(lambda x: x.astype(str).str.contains('<'))
     df.loc[:, df[task_cols].select_dtypes(exclude='number').columns] = df[task_cols].select_dtypes(exclude='number').apply(lambda x: pd.to_numeric(x.str.replace('<|>|=|~|\*', ''), errors='coerce'))

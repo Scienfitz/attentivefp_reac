@@ -97,14 +97,13 @@ def main(args):
     logger.info(f'Imported {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
     if args.frac != 1.0:
-        df = df.sample(frac=args.frac)
+        df = df.sample(frac=args.frac, random_state=args.seed)
         logger.info(f'Reduced dataframe to {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
     task_cols  = args.task_cols
     smiles_col = args.smiles_col
     id_col     = args.id_col
     grp_col    = args.split_column
-
     logger.info(f'Using task columns {",".join(task_cols)} for training')
 
     # preprocess data
@@ -115,7 +114,7 @@ def main(args):
 
     task_labels[mask_missing == 0] = MISSING_VALUE_FILL # ensure a finite value for all labels
     mols = df_prep['_mol'].values
-    grp = df_prep['_grp'].values if grp_col else None
+    grp  = df_prep['_grp'].values if grp_col else None
 
     if not args.skip_cv or args.hyper_evals or args.baseline:
         cvFolds = splitter.getSplit(mols, task_labels, split=args.split, n_splits=args.split_n, groups=grp, random_state=args.seed)
@@ -160,7 +159,7 @@ def main(args):
                        'n_dense':        0,
                        'lr':             -3.5,
                        'weight_decay':   0,
-                       'batch_size':     128
+                       'batch_size':     1024
                        }
 
     if args.hyper_evals:
