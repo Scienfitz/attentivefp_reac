@@ -34,7 +34,7 @@ def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epoc
     }
 
     local_dataloader = DataLoader(
-        list(zip(graphs, task_labels, mask_missing)),z
+        list(zip(graphs, task_labels, mask_missing)),
         batch_size=128,
         shuffle=True,
         num_workers=0,
