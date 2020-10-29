@@ -6,10 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def preprocess(df, smiles_col, task_cols, id_col=None, grp_col=None, standardize=True, random_state=None):
+def preprocess(df, smiles_cols, task_cols, id_col=None, grp_col=None, standardize=True, random_state=None):
     # verify input
     assert all([l in df.columns for l in task_cols]), 'Required column missing in input'
-    assert smiles_col in df.columns, f'smiles column {smiles_col} missing in input'
+    assert all([l in df.columns for l in smiles_cols]),   'Required column missing in input'
+
     if id_col:
         assert id_col in df.columns, f'ID column {id_col} missing in input'
         df['_id'] = df[id_col]
@@ -27,14 +28,17 @@ def preprocess(df, smiles_col, task_cols, id_col=None, grp_col=None, standardize
     # Get mols & standardize
     #
     logger.info(f'Smiles 2 Mol')
-    df['_mol'] = df[smiles_col].apply(smiles2mol)
+    for k,col in enumerate(smiles_cols):
+        df[f'_mol{k}'] = df[col].apply(smiles2mol)
 
     if standardize:
         logger.info('Run standardize')
-        df['_mol'] = df['_mol'].apply(standardize_mol)
+        for k, _ in enumerate(smiles_cols):
+            df[f'_mol{k}'] = df[f'_mol{k}'].apply(standardize_mol)
 
     # put canonical smiles into column
-    df['_smiles'] = df['_mol'].apply(mol2smiles)
+    for k, _ in enumerate(smiles_cols):
+        df[f'_smiles{k}'] = df[f'_mol{k}'].apply(mol2smiles)
 
     # convert string columns
     mask_greater = df[task_cols].apply(lambda x: x.astype(str).str.contains('>'))
@@ -44,13 +48,16 @@ def preprocess(df, smiles_col, task_cols, id_col=None, grp_col=None, standardize
     good_ids = df.index[np.any(np.isfinite(df[task_cols]), axis=1)]
     good_ids = good_ids.intersection(df.index[~df['_mol'].apply(isEmptyMolecule)])
 
-    cols = ['_id', '_smiles', '_mol']
+    cols = ['_id']
+    cols += [f'_smiles{k}' for k,_ in enumerate(smiles_cols)]
+    cols += [f'_mol{k}' for k, _ in enumerate(smiles_cols)]
+
     if grp_col: cols.append('_grp')
     cols.extend(task_cols)
 
     df = df.loc[good_ids, cols]
 
-    task_labels = torch.from_numpy(df[task_cols].values).float()
+    task_labels  = torch.from_numpy(df[task_cols].values).float()
     mask_missing = np.isfinite(task_labels).float()
 
     # Put -1 / -2 into mask to indicate > / < qualified values
