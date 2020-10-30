@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from ..models.dgl import AttentiveFPDense2, collate_molgraphs2, AttentiveFPDense, collate_molgraphs
-from ..models.training import training_dataloader
+from ..models.training import training_dataloader, training_dataloader2
 
 
 def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epochs, patience, device, seed):
@@ -132,9 +132,9 @@ def hyperopt2(lst_graphs, task_labels, mask_missing, hyperparams, max_evals, max
                                            weight_decay = hyp['weight_decay'])
 
         # run a single training using a fixed seed for comparison
-        summary = training_dataloader(local_model, local_optimizer, local_dataloader,
-                                      loss_fn = nn.SmoothL1Loss(reduction='none'), patience = patience, device=device,
-                                      bootstrap_runs=1, bootstrap_seed = seed, max_epochs=max_epochs)
+        summary = training_dataloader2(local_model, local_optimizer, local_dataloader,
+                                       loss_fn = nn.SmoothL1Loss(reduction='none'), patience = patience, device=device,
+                                       bootstrap_runs=1, bootstrap_seed = seed, max_epochs=max_epochs)
 
         return summary[0]['final_loss_val']
 
