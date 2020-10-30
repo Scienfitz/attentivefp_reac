@@ -101,7 +101,7 @@ def main(args):
         logger.info(f'Reduced dataframe to {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
     task_cols   = args.task_cols
-    smiles_cols = args.smiles_cols
+    smiles_col  = args.smiles_col
     id_col      = args.id_col
     grp_col     = args.split_column
     logger.info(f'Using task columns {",".join(task_cols)} for training')
@@ -109,7 +109,7 @@ def main(args):
     # preprocess data
     # will result in reduced df containing only valid rows
     # Define mask for missing values and get torch representations
-    df_prep, task_labels, mask_missing = data.preprocess(df, smiles_cols, task_cols , id_col, grp_col, args.standardize, random_state=args.seed)
+    df_prep, task_labels, mask_missing = data.preprocess(df, [smiles_col], task_cols , id_col, grp_col, args.standardize, random_state=args.seed)
     del df
 
     task_labels[mask_missing == 0] = MISSING_VALUE_FILL # ensure a finite value for all labels
