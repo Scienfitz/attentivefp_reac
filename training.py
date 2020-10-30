@@ -40,9 +40,9 @@ from collections import defaultdict
 
 from attentivefp.utils import chem, log, data, splitter, tuning
 from attentivefp.featurizer import graph
-from attentivefp.models.dgl import AttentiveFPDense, collate_molgraphs, AttentiveFPDense2, collate_molgraphs2, EnsembleAttFP
+from attentivefp.models.dgl import AttentiveFPDense, collate_molgraphs, EnsembleAttFP
 from attentivefp.models import baseline
-from attentivefp.models.training import perform_cv, training_dataloader, perform_cv2, training_dataloader2
+from attentivefp.models.training import perform_cv, training_dataloader
 
 # define appropriate torch device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
