@@ -326,7 +326,7 @@ if __name__ == '__main__':
 
     df = pd.read_csv(_input_file_path, sep=None, engine='python', nrows=5)
     assert all([l in df.columns for l in args.task_cols]), 'Required column missing in input'
-    assert args.smiles_col in df.columns, f'smiles column {args.smiles_col} missing in input'
+    assert all([l in df.columns for l in args.smiles_cols], f'smiles column {args.smiles_col} missing in input'
     if args.id_col:
         assert args.id_col in df.columns, f'ID column {args.id_col} missing in input'
 
