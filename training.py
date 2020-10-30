@@ -53,8 +53,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='AttentiveFP Training')
     parser.add_argument('-t', '--task_cols',  help='Tasks column names', nargs='+', required=True)
     parser.add_argument('-d', '--dataset',    help='Input file', required=True)
-    #parser.add_argument('-s', '--smiles_col', help='SMILES column name', required=True)
-    parser.add_argument('-s', '--smiles_cols', help='SMILES column names', nargs='+', required=True)
+    parser.add_argument('-s', '--smiles_col', help='SMILES column name', required=True)
     parser.add_argument('-id', '--id_col',    help='ID column name', required=False)
     parser.add_argument('-o', '--outdir',     help='Output directory', required=True)
     parser.add_argument('-v', '--verbose',    help='Verbosity', type=int, default=0)
@@ -114,14 +113,14 @@ def main(args):
     del df
 
     task_labels[mask_missing == 0] = MISSING_VALUE_FILL # ensure a finite value for all labels
-    lst_mols = [df_prep[f'_mol{k}'].values for k,_ in enumerate(smiles_cols)]
-    #mols = df_prep['_mol'].values
+    #lst_mols = [df_prep[f'_mol{k}'].values for k,_ in enumerate(smiles_cols)]
+    mols = df_prep['_mol0'].values
     grp  = df_prep['_grp'].values if grp_col else None
 
     if not args.skip_cv or args.hyper_evals or args.baseline:
         # Note that we only pass the first series of mols to the splitter.
         # Splittings that consider info from all mol series are not supported yet
-        cvFolds = splitter.getSplit(lst_mols[0], task_labels, split=args.split, n_splits=args.split_n, groups=grp, random_state=args.seed)
+        cvFolds = splitter.getSplit(mols, task_labels, split=args.split, n_splits=args.split_n, groups=grp, random_state=args.seed)
 
         # put fold info in input df
         df_prep['CV_fold'] = -1 # -1 indicates to be used always in train set
@@ -151,8 +150,8 @@ def main(args):
     
     # Generate graphs for DGL
     dglf = graph.DGLFeaturizer(device=device, AtomFeaturizer=atom_featurizer, BondFeaturizer=bond_featurizer)
-    #graphs = dglf.featurize_mols(mols)
-    lst_graphs = [dglf.featurize_mols(mols) for mols in lst_mols]
+    graphs = dglf.featurize_mols(mols)
+    #lst_graphs = [dglf.featurize_mols(mols) for mols in lst_mols]
 
     hyperparameters = {'node_feat_size': atomFeatureSize,#74 for canonical
                        'edge_feat_size': bondFeatureSize,#12 for canonical
@@ -169,24 +168,24 @@ def main(args):
 
     if args.hyper_evals:
         # do hyper evals
-        hyperparameters = tuning.hyperopt2(lst_graphs, task_labels, mask_missing, hyperparameters, args.hyper_evals, args.max_epochs, args.patience, device, args.seed)
+        hyperparameters = tuning.hyperopt(graphs, task_labels, mask_missing, hyperparameters, args.hyper_evals, args.max_epochs, args.patience, device, args.seed)
 
     hyperparameters['n_tasks'] = task_labels.shape[1]
 
     if args.pretrained_model is not None:
         model = torch.load(args.pretrained_model)
-        # # Freeze AttFP model weights
-        # for param in model.attfp.parameters():
-        #     param.requires_grad = False
         # Freeze AttFP model weights
-        for attfp in model.attfps:
-            for param in attfp.parameters():
-                param.requires_grad = False
+        for param in model.attfp.parameters():
+            param.requires_grad = False
+        # Freeze AttFP model weights
+        #for attfp in model.attfps:
+        #    for param in attfp.parameters():
+        #        param.requires_grad = False
         # replace final layer with new layer with correct number of tasks
         model.predict = nn.Sequential(nn.Dropout(p=0.2, inplace=False),
                                       nn.Linear(in_features=model.predict[1].in_features, out_features=hyperparameters['n_tasks'], bias=True))
     else:
-        model = AttentiveFPDense2(node_feat_size=atomFeatureSize,
+        model = AttentiveFPDense(node_feat_size=atomFeatureSize,
                                   edge_feat_size=bondFeatureSize,
                                   num_layers=int(hyperparameters['num_layers']),
                                   num_timesteps=int(hyperparameters['num_timesteps']),
@@ -194,8 +193,8 @@ def main(args):
                                   dropout=int(hyperparameters['dropout']),
                                   n_dense=int(hyperparameters['n_dense']),
                                   n_units=int(hyperparameters['n_units']),
-                                  n_tasks=int(hyperparameters['n_tasks']),
-                                  n_graphs=len(lst_graphs)
+                                  n_tasks=int(hyperparameters['n_tasks'])
+                                #  n_graphs=len(lst_graphs)
                                   )
 
     model = model.to(device)
@@ -204,7 +203,7 @@ def main(args):
                                  weight_decay=hyperparameters['weight_decay'])
 
     if args.split != "None" and not args.skip_cv:
-        train_dl = perform_cv2(model, optimizer, lst_graphs, task_labels, mask_missing, cvFolds,
+        train_dl = perform_cv(model, optimizer, graphs, task_labels, mask_missing, cvFolds,
                                loss_fn=nn.SmoothL1Loss(reduction='none'), max_epochs=args.max_epochs,
                                bootstrap_seed=None, bootstrap_runs=args.bootstrap_n,
                                patience=args.patience, device=device, batch_size=int(hyperparameters['batch_size']),
@@ -235,48 +234,47 @@ def main(args):
                 for k, sub in enumerate(d):
                     csv_writer.writerow([m, k+1] + [f'{x:.3f}' for x in sub])
 
-    # Disabled for now
-    # if args.baseline:
-    #     bsl_r = baseline.get_baseline(mols, task_labels.numpy(), mask_missing.numpy(), cvFolds, metrics=[mean_squared_error, r2_score, median_absolute_error])
-    #     baseline_summary_metrics = defaultdict(list)
-    #
-    #     with open(os.path.join(save_dir, 'baseline_results.txt'), 'w') as _output_file_writer:
-    #         for k, d in bsl_r.items():
-    #             for m, x in d['test_metrics'].items():
-    #                 baseline_summary_metrics[m].append(x)
-    #             # replace missing value dummy value with NA for export
-    #             d['test_y'][d['test_y'] == MISSING_VALUE_FILL] = np.nan
-    #             # Export CV results to file
-    #             cv_df = pd.DataFrame(np.concatenate([d['test_y'], d['test_preds'], d['test_std']], axis=1), columns=[f'{c}' for c in task_cols] + [f'{c}:pred' for c in task_cols] + [f'{c}:std' for c in task_cols])
-    #             cv_df = cv_df.reindex(sorted(cv_df.columns), axis=1)
-    #             cv_df.insert(loc=0, column='IDX', value=df_prep.index[d['test_idx']].values)
-    #             cv_df.insert(loc=1, column='ID', value=df_prep.iloc[d['test_idx']]['_id'].values)
-    #             cv_df.insert(loc=2, column='Fold', value=k+1)
-    #             cv_df.to_csv(_output_file_writer, sep='\t', index=False, float_format='%.3f', header=False if k > 0 else True)
-    #
-    #     logger.info('Baseline metrics:')
-    #     with open(os.path.join(save_dir, 'baseline_summary.txt'), 'w') as _output_file_writer:
-    #         csv_writer = csv.writer(_output_file_writer, delimiter='\t')
-    #         csv_writer.writerow(['Metric', 'Fold'] + [f'{c}' for c in task_cols])
-    #         for m, d in baseline_summary_metrics.items():
-    #             logger.info(f'    {m}, {np.asarray(d).mean(axis=0)}')
-    #             for k, sub in enumerate(d):
-    #                 csv_writer.writerow([m, k+1] + [f'{x:.3f}' for x in sub])
+    if args.baseline:
+        bsl_r = baseline.get_baseline(mols, task_labels.numpy(), mask_missing.numpy(), cvFolds, metrics=[mean_squared_error, r2_score, median_absolute_error])
+        baseline_summary_metrics = defaultdict(list)
+
+        with open(os.path.join(save_dir, 'baseline_results.txt'), 'w') as _output_file_writer:
+            for k, d in bsl_r.items():
+                for m, x in d['test_metrics'].items():
+                    baseline_summary_metrics[m].append(x)
+                # replace missing value dummy value with NA for export
+                d['test_y'][d['test_y'] == MISSING_VALUE_FILL] = np.nan
+                # Export CV results to file
+                cv_df = pd.DataFrame(np.concatenate([d['test_y'], d['test_preds'], d['test_std']], axis=1), columns=[f'{c}' for c in task_cols] + [f'{c}:pred' for c in task_cols] + [f'{c}:std' for c in task_cols])
+                cv_df = cv_df.reindex(sorted(cv_df.columns), axis=1)
+                cv_df.insert(loc=0, column='IDX', value=df_prep.index[d['test_idx']].values)
+                cv_df.insert(loc=1, column='ID', value=df_prep.iloc[d['test_idx']]['_id'].values)
+                cv_df.insert(loc=2, column='Fold', value=k+1)
+                cv_df.to_csv(_output_file_writer, sep='\t', index=False, float_format='%.3f', header=False if k > 0 else True)
+
+        logger.info('Baseline metrics:')
+        with open(os.path.join(save_dir, 'baseline_summary.txt'), 'w') as _output_file_writer:
+            csv_writer = csv.writer(_output_file_writer, delimiter='\t')
+            csv_writer.writerow(['Metric', 'Fold'] + [f'{c}' for c in task_cols])
+            for m, d in baseline_summary_metrics.items():
+                logger.info(f'    {m}, {np.asarray(d).mean(axis=0)}')
+                for k, sub in enumerate(d):
+                    csv_writer.writerow([m, k+1] + [f'{x:.3f}' for x in sub])
 
     # final model training using all data for export and deployment
     if not args.skip_final:
-        logger.info(f'Training final model on all {len(lst_graphs[0])} datapoints')
+        logger.info(f'Training final model on all {len(graphs)} datapoints')
         # Create data loader
         final_dataloader = DataLoader(
-            list(zip(map(list,*lst_graphs), task_labels, mask_missing)),
+            list(zip(graphs, task_labels, mask_missing)),
             batch_size  = int(hyperparameters['batch_size']),
             shuffle     = True,
             num_workers = 0,
-            collate_fn  = collate_molgraphs2
+            collate_fn  = collate_molgraphs
         )
 
         # run bootstrap training on all data
-        summary = training_dataloader2(model, optimizer, final_dataloader, loss_fn=nn.SmoothL1Loss(reduction='none'),
+        summary = training_dataloader(model, optimizer, final_dataloader, loss_fn=nn.SmoothL1Loss(reduction='none'),
                                        patience=args.patience, device=device, bootstrap_runs=args.bootstrap_n,
                                        bootstrap_seed=args.seed, max_epochs=args.max_epochs)
 
@@ -326,7 +324,7 @@ if __name__ == '__main__':
 
     df = pd.read_csv(_input_file_path, sep=None, engine='python', nrows=5)
     assert all([l in df.columns for l in args.task_cols]), 'Required column missing in input'
-    assert all([l in df.columns for l in args.smiles_cols]), f'smiles column {args.smiles_col} missing in input'
+    assert args.smiles_col in df.columns, f'smiles column {args.smiles_col} missing in input'
     if args.id_col:
         assert args.id_col in df.columns, f'ID column {args.id_col} missing in input'
 
