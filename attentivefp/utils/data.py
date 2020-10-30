@@ -46,13 +46,9 @@ def preprocess(df, smiles_cols, task_cols, id_col=None, grp_col=None, standardiz
     df.loc[:, df[task_cols].select_dtypes(exclude='number').columns] = df[task_cols].select_dtypes(exclude='number').apply(lambda x: pd.to_numeric(x.str.replace('<|>|=|~|\*', ''), errors='coerce'))
 
     good_ids = df.index[np.any(np.isfinite(df[task_cols]), axis=1)]
-    good_ids = good_ids.intersection(
-        df.index[
-            ~df.loc[:,
-                df.columns[df.columns.str.startswith('_mol')]
-            ].apply(isEmptyMolecule).any(axis=1)
-        ]
-    )
+    molcols = df.columns[df.columns.str.startswith('_mol')]
+    for col in molcols:
+        good_ids = good_ids.intersection(df.index[~df[col].apply(isEmptyMolecule)])
 
     cols = ['_id']
     cols += [f'_smiles{k}' for k,_ in enumerate(smiles_cols)]
