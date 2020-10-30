@@ -85,7 +85,7 @@ def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epoc
 
     return best_params
 
-def hyperopt2(lst_graphs, task_labels, mask_missing, hyperparams, max_evals, max_epochs, patience, device, seed, batch_size=256):
+def hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparams, max_evals, max_epochs, patience, device, seed, batch_size=256):
     # Augmented Version: graphs is now a list of lists. entries of each list will be treated as a separate graph
     logger.info(f'Running {max_evals} hyperparameter optimization trials')
 
@@ -108,7 +108,7 @@ def hyperopt2(lst_graphs, task_labels, mask_missing, hyperparams, max_evals, max
     }
 
     local_dataloader = DataLoader(
-        list(zip(map(list,zip(*lst_graphs)), task_labels, mask_missing)),
+        list(zip(graphs1, graphs2, graphs3, task_labels, mask_missing)),
         batch_size  = batch_size,
         shuffle     = True,
         num_workers = 0,
@@ -125,7 +125,7 @@ def hyperopt2(lst_graphs, task_labels, mask_missing, hyperparams, max_evals, max
                                         n_dense         = int(hyp['n_dense']),
                                         n_units         = int(hyp['n_units']),
                                         n_tasks         = task_labels.shape[1],
-                                        n_graphs        = len(lst_graphs))
+                                        )
         local_model     = local_model.to(device)
         local_optimizer = torch.optim.Adam(local_model.parameters(),
                                            lr           = np.power(10, hyp['lr']),

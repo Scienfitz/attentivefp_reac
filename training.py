@@ -74,7 +74,6 @@ def parse_arguments():
     #### Added arguments
     parser.add_argument('--featurizer',       help='Featurizer Type (Default: Canonical)', action='store', required=False, default="Canonical", choices=['Canonical','Reaction','ReactionFP','AttentiveFP'])
     parser.add_argument('--frac',             help='Only do calculations on a fraction of all data, e.g. 0.2', required=False, type=float, default=1.0)
-    parser.add_argument('--separate_graphs',  help='Instead of one disconnected graph use 3 separate graphs', action='store_true')
     return parser.parse_args()
 
 def main(args):

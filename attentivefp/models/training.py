@@ -11,7 +11,7 @@ from sklearn import model_selection
 import logging
 logger = logging.getLogger(__name__)
 
-from ..models.dgl import collate_molgraphs, collate_molgraphs2, EnsembleAttFP
+from ..models.dgl import collate_molgraphs, collate_molgraphs2, EnsembleAttFP, EnsembleAttFP2
 from ..utils import earlystop
 
 
@@ -49,13 +49,16 @@ def train_single_epoch2(model, data_loader, loss_criterion, optimizer, device):
     losses = []
     model.train()
     for batch_id, batch_data in enumerate(data_loader):
-        bgs, labels, masks = batch_data
-        for bg in bgs:
-            bg.to(device)
+        bg1, bg2, bg3, labels, masks = batch_data
+        bg1.to(device)
+        bg2.to(device)
+        bg3.to(device)
         labels = labels.to(device)
         masks  = masks.to(device)
 
-        prediction = model(bgs, [bg.ndata['hv'] for bg in bgs], [bg.edata['e'] for bg in bgs])
+        prediction = model(bg1, bg2, bg3,
+                           bg1.ndata['hv'], bg2.ndata['hv'], bg3.ndata['hv'],
+                           bg1.edata['e'], bg2.edata['e'], bg3.edata['e'])
 
         # Handle qualified values.
         # Mask -1 = >, -2 = <
@@ -108,13 +111,16 @@ def eval_single_epoch2(dataloader, model, loss_fn, device):
     model.eval()
     with torch.no_grad():
         for batch_id, batch_data in enumerate(dataloader):
-            bgs, labels, masks = batch_data
-            for bg in bgs:
-                bg.to(device)
+            bg1, bg2, bg3, labels, masks = batch_data
+            bg1.to(device)
+            bg2.to(device)
+            bg3.to(device)
             labels = labels.to(device)
             masks  = masks.to(device)
 
-            prediction = model(bgs, [bg.ndata['hv'] for bg in bgs], [bg.edata['e'] for bg in bgs])
+            prediction = model(bg1, bg2, bg3,
+                               bg1.ndata['hv'], bg2.ndata['hv'], bg3.ndata['hv'],
+                               bg1.edata['e'],  bg2.edata['e'],  bg3.edata['e'])
 
             # Handle qualified values.
             # Mask -1 = >, -2 = <
@@ -310,10 +316,13 @@ def predict_dataloader2(dataloader, model, device=None, dropout=False):
     all_pred = []
     with torch.no_grad():
         for batch in dataloader:
-            bgs, _, _ = batch
-            for bg in bgs:
-                bg.to(device)
-            pred = model(bgs, [bg.ndata['hv'] for bg in bgs], [bg.edata['e'] for bg in bgs])
+            bg1, bg2, bg3, _, _ = batch
+            bg1.to(device)
+            bg2.to(device)
+            bg3.to(device)
+            pred = model(bg1, bg2, bg3,
+                         bg1.ndata['hv'], bg2.ndata['hv'], bg3.ndata['hv'],
+                         bg1.edata['e'],  bg2.edata['e'],  bg3.edata['e'])
             all_pred.append(pred.data.cpu())
 
     return torch.cat(all_pred, dim=-2)
@@ -344,9 +353,9 @@ def predict(graphs, model, device, batch_size=1000, dropout_samples=0):
 
     return y_hat, std
 
-def predict2(lst_graphs, model, device, batch_size=1000, dropout_samples=0):
+def predict2(g1, g2, g3, model, device, batch_size=1000, dropout_samples=0):
     dataloader = DataLoader(
-        list(zip(map(list, zip(*lst_graphs)), torch.zeros(len(lst_graphs[0])))),
+        list(zip(g1, g2, g3, torch.zeros(len(g1)))),
         batch_size  = batch_size,
         shuffle     = False,
         num_workers = 0,
@@ -425,13 +434,13 @@ def perform_cv(model, optimizer, graphs, task_labels, mask_missing, cv, loss_fn,
 
     return results
 
-def perform_cv2(model, optimizer, graphs, task_labels, mask_missing, cv, loss_fn, metrics=[], max_epochs=1000, bootstrap_runs=1, bootstrap_seed=None, batch_size=128, patience=50, device=None):
+def perform_cv2(model, optimizer, g1, g2, g3, task_labels, mask_missing, cv, loss_fn, metrics=[], max_epochs=1000, bootstrap_runs=1, bootstrap_seed=None, batch_size=128, patience=50, device=None):
     results = {}
     for cv_run, (train_idx, test_idx) in enumerate(cv):
         logger.info(f'Start CV run {cv_run + 1}/{len(cv)} with {len(train_idx)}/{len(test_idx)} compounds')
 
         # Get train subset for training and run training
-        train_dataset = list(zip([graph[train_idx] for graph in graphs], task_labels[train_idx], mask_missing[train_idx]))
+        train_dataset = list(zip(g1[train_idx], g2[train_idx], g3[train_idx], task_labels[train_idx], mask_missing[train_idx]))
 
         train_dataloader = DataLoader(
             train_dataset,
@@ -447,7 +456,7 @@ def perform_cv2(model, optimizer, graphs, task_labels, mask_missing, cv, loss_fn
         # setup ensemble
         ensemble = EnsembleAttFP(models=[r['model'] for r in run_summary])
         # score
-        preds, std = predict2([graph[test_idx] for graph in graphs], ensemble, device=device, batch_size=1000, dropout_samples=0)
+        preds, std = predict2(g1[test_idx], g2[test_idx], g3[test_idx], ensemble, device=device, batch_size=1000, dropout_samples=0)
 
         metrics_results = {}
         if metrics:

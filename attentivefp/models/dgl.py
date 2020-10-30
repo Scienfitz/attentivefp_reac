@@ -88,8 +88,7 @@ class AttentiveFPDense2(nn.Module):
                  dropout=0.2,
                  n_dense=0,
                  n_units=256,
-                 n_tasks=1,
-                 n_graphs=1):
+                 n_tasks=1):
         super(AttentiveFPDense2, self).__init__()
 
         self.node_feat_size  = node_feat_size
@@ -103,20 +102,34 @@ class AttentiveFPDense2(nn.Module):
         self.n_tasks         = n_tasks
 
         # Augmented: several graphs
-        self.n_graphs = n_graphs
-        self.attfps   = [AttentiveFPPredictor(node_feat_size  = node_feat_size,
-                                              edge_feat_size  = edge_feat_size,
-                                              num_layers      = num_layers,
-                                              num_timesteps   = num_timesteps,
-                                              graph_feat_size = graph_feat_size,
-                                              dropout         = dropout,
-                                              n_tasks=n_tasks) for _ in range(self.n_graphs)]
+        self.attfp1 = AttentiveFPPredictor(node_feat_size  = node_feat_size,
+                                           edge_feat_size  = edge_feat_size,
+                                           num_layers      = num_layers,
+                                           num_timesteps   = num_timesteps,
+                                           graph_feat_size = graph_feat_size,
+                                           dropout         = dropout,
+                                           n_tasks=n_tasks)
+        self.attfp2 = AttentiveFPPredictor(node_feat_size  = node_feat_size,
+                                           edge_feat_size  = edge_feat_size,
+                                           num_layers      = num_layers,
+                                           num_timesteps   = num_timesteps,
+                                           graph_feat_size = graph_feat_size,
+                                           dropout         = dropout,
+                                           n_tasks=n_tasks)
+        self.attfp3 = AttentiveFPPredictor(node_feat_size  = node_feat_size,
+                                           edge_feat_size  = edge_feat_size,
+                                           num_layers      = num_layers,
+                                           num_timesteps   = num_timesteps,
+                                           graph_feat_size = graph_feat_size,
+                                           dropout         = dropout,
+                                           n_tasks=n_tasks)
 
 
         if n_dense > 0:
             # disable dgllife attfp predict layer by replacing with nn.Identity
-            for attfp in self.attfps:
-                attfp.predict = nn.Identity()
+            self.attfp1.predict = nn.Identity()
+            self.attfp2.predict = nn.Identity()
+            self.attfp3.predict = nn.Identity()
 
             self.dense = []
             for d in range(n_dense):
@@ -141,13 +154,14 @@ class AttentiveFPDense2(nn.Module):
                 'n_units':         self.n_units,
                 'n_dense':         self.n_dense,
                 'n_tasks':         self.n_tasks,
-                'n_graphs':        self.n_graphs,
                 }
 
-    def forward(self, g, node_feats, edge_feats):
+    def forward(self, g1, g2, g3, node_feats1, node_feats2, node_feats3, edge_feats1, edge_feats2, edge_feats3):
         # Augmented: multiple graphs possible
-        x = [attfp(g[k], node_feats[k], edge_feats[k]) for k,attfp in enumerate(self.attfps)]
-        x = torch.cat(x, dim=1)
+        x1 = self.attfp1(g1, node_feats1, edge_feats1)
+        x2 = self.attfp2(g2, node_feats2, edge_feats2)
+        x3 = self.attfp3(g3, node_feats3, edge_feats3)
+        x = torch.cat([x1, x2, x3], dim=1)
 
         if self.n_dense > 0:
             for i in range(len(self.dense)):
@@ -163,6 +177,16 @@ class EnsembleAttFP(nn.Module):
 
     def forward(self, g, node_feats, edge_feats):
         output = torch.stack([model(g, node_feats, edge_feats) for model in self.models], dim=0)
+        return output
+
+class EnsembleAttFP2(nn.Module):
+    def __init__(self, models):
+        super(EnsembleAttFP2, self).__init__()
+        self.models = nn.ModuleList(models)
+
+    def forward(self, g1, g2, g3, node_feats1, node_feats2, node_feats3, edge_feats1, edge_feats2, edge_feats3):
+        output = torch.stack([model(g1, g2, g3, node_feats1, node_feats2, node_feats3, edge_feats1, edge_feats2, edge_feats3)
+                              for model in self.models], dim=0)
         return output
 
 def collate_molgraphs(data):
@@ -232,21 +256,22 @@ def collate_molgraphs2(data):
         existence of labels. If binary masks are not
         provided, return a tensor with ones.
     """
-    assert len(data[0]) in [2, 3], \
-        'Expect the tuple to be of length 2 or 3, got {:d}'.format(len(data[0]))
-    if len(data[0]) == 2:
-        graphs, labels = map(list, zip(*data))
-        graphs = map(list, zip(*graphs))
+    assert len(data[0]) in [4, 5], \
+        'Expect the tuple to be of length 4 or 5, got {:d}'.format(len(data[0]))
+    if len(data[0]) == 4:
+        graphs1, graphs2, graphs3, labels = map(list, zip(*data))
         masks = None
     else:
-        graphs, labels, masks = map(list, zip(*data))
-        graphs = map(list, zip(*graphs))
+        graphs1, graphs2, graphs3, labels, masks = map(list, zip(*data))
 
-    bgs = [dgl.batch(graph) for graph in graphs]
+    bg1, bg2, bg3 = dgl.batch(graphs1), dgl.batch(graphs2), dgl.batch(graphs3)
 
-    for bg in bgs:
-        bg.set_n_initializer(dgl.init.zero_initializer)
-        bg.set_e_initializer(dgl.init.zero_initializer)
+    bg1.set_n_initializer(dgl.init.zero_initializer)
+    bg1.set_e_initializer(dgl.init.zero_initializer)
+    bg2.set_n_initializer(dgl.init.zero_initializer)
+    bg2.set_e_initializer(dgl.init.zero_initializer)
+    bg3.set_n_initializer(dgl.init.zero_initializer)
+    bg3.set_e_initializer(dgl.init.zero_initializer)
 
     if labels is None:
         labels = torch.ones(labels.shape)
@@ -258,7 +283,7 @@ def collate_molgraphs2(data):
     else:
         masks = torch.stack(masks, dim=0)
 
-    return bgs, labels, masks
+    return bg1, bg2, bg3, labels, masks
 
 
 
