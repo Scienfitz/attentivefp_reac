@@ -74,6 +74,7 @@ def parse_arguments():
     #### Added arguments
     parser.add_argument('--featurizer',       help='Featurizer Type (Default: Canonical)', action='store', required=False, default="Canonical", choices=['Canonical','Reaction','ReactionFP','AttentiveFP'])
     parser.add_argument('--frac',             help='Only do calculations on a fraction of all data, e.g. 0.2', required=False, type=float, default=1.0)
+    parser.add_argument('--batchsize',        help='Batch size', required=False, type=int, default=512)
     return parser.parse_args()
 
 def main(args):
@@ -162,7 +163,7 @@ def main(args):
                        'n_dense':        0,
                        'lr':             -3.5,
                        'weight_decay':   0,
-                       'batch_size':     256
+                       'batch_size':     args.batchsize
                        }
 
     if args.hyper_evals:
