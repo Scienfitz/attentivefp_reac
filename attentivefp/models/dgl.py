@@ -136,7 +136,7 @@ class AttentiveFPDense2(nn.Module):
                 self.dense.append(
                     nn.Sequential(
                         nn.Dropout(dropout),
-                        nn.Linear(n_units if d > 0 else graph_feat_size, n_units),
+                        nn.Linear(n_units if d > 0 else 3*graph_feat_size, n_units),
                         nn.ReLU()
                     )
                 )
