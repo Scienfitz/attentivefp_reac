@@ -153,7 +153,8 @@ def main(args):
     dglf = graph.DGLFeaturizer(device=device, AtomFeaturizer=atom_featurizer, BondFeaturizer=bond_featurizer)
     #graphs = dglf.featurize_mols(mols)
     lst_graphs = [dglf.featurize_mols(mols) for mols in lst_mols]
-    
+    print(lst_graphs)
+
     hyperparameters = {'node_feat_size': atomFeatureSize,#74 for canonical
                        'edge_feat_size': bondFeatureSize,#12 for canonical
                        'num_layers':      3,
