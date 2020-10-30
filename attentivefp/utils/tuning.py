@@ -108,7 +108,7 @@ def hyperopt2(lst_graphs, task_labels, mask_missing, hyperparams, max_evals, max
     }
 
     local_dataloader = DataLoader(
-        list(zip(map(list,*lst_graphs), task_labels, mask_missing)),
+        list(zip(map(list,zip(*lst_graphs)), task_labels, mask_missing)),
         batch_size  = batch_size,
         shuffle     = True,
         num_workers = 0,
