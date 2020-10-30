@@ -351,6 +351,7 @@ if __name__ == '__main__':
 
     args.task_cols   = np.hstack([x.split(',') for x in args.task_cols])
     args.smiles_cols = np.hstack([x.split(',') for x in args.smiles_cols])
+    print(args.task_cols, args.smiles_cols)
 
     # quick first data check
     _input_file_path = args.dataset if os.path.isabs(args.dataset) else os.path.join(os.getcwd(), args.dataset)
