@@ -80,6 +80,7 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
     header = None
     for chunk_id, chunk in enumerate(pd.read_csv(data_file, sep=None, engine='python', chunksize=10000, header=header,
                                                  nrows=100 if test else None)):
+        print(chunk.head())
         # # load data
         # if smiles_col is not None:
         #     if smiles_col not in chunk.columns:
