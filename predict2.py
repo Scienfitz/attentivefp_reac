@@ -188,6 +188,7 @@ if __name__ == '__main__':
         _output_file_writer = open(_output_file_path, 'w')
 
     # verify smiles_col exist in input data
+    args.smiles_cols = np.hstack([x.split(',') for x in args.smiles_cols])
     smiles_cols = args.smiles_cols
     df = pd.read_csv(_input_file_path, sep=None, engine='python', nrows=5)
     assert len(smiles_cols)==3, 'There need to be exactly 3 SMILES columns'
