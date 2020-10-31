@@ -80,7 +80,6 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
     header = 0
     for chunk_id, chunk in enumerate(pd.read_csv(data_file, sep=None, engine='python', chunksize=10000, header=header,
                                                  nrows=100 if test else None)):
-        print(chunk.head())
         # # load data
         # if smiles_col is not None:
         #     if smiles_col not in chunk.columns:
@@ -114,7 +113,7 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
             chunk['_smiles2'] = chunk['_mol2'].apply(mol2smiles)
             chunk['_smiles3'] = chunk['_mol3'].apply(mol2smiles)
 
-        # missing_mols = np.where(chunk['_mol'].isna())[0]
+        # missing_mols = np.where(chunk['_mol1'].isna() | chunk['_mol2'].isna() | chunk['_mol3'].isna())[0]
         # if len(missing_mols) > 0:
         #     missing_smiles = chunk[smiles_col].iloc[missing_mols].values.astype(str)
         #     logger.info(f'Smiles failed to convert into mol: {",".join(missing_smiles)}')
@@ -143,8 +142,10 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
         graphs2 = dglf.featurize_mols(chunk['_mol2'])
         graphs3 = dglf.featurize_mols(chunk['_mol3'])
 
-        # good_idx = np.where(np.not_equal(graphs, None))[0]
-        # graphs = graphs[good_idx]
+        good_idx = np.where(np.not_equal(graphs1, None) | np.not_equal(graphs2, None) | np.not_equal(graphs3, None))[0]
+        graphs1 = graph1[good_idx]
+        graphs2 = graph2[good_idx]
+        graphs3 = graph3[good_idx]
 
         logging.debug(f'start prediction for {len(graphs1)} compounds')
         preds, std = att_predict(graphs1, graphs2, graphs3, model, device, batch_size=2000, dropout_samples=dropout_samples)
