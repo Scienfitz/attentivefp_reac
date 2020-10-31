@@ -192,7 +192,7 @@ if __name__ == '__main__':
     smiles_cols = args.smiles_cols
     df = pd.read_csv(_input_file_path, sep=None, engine='python', nrows=5)
     assert len(smiles_cols)==3, 'There need to be exactly 3 SMILES columns'
-    if smiles_cols and any([col not in df.columns for col in smiles_cols]):
+    if any([col not in df.columns for col in smiles_cols]):
         logging.error(f'One of columns {smiles_cols} does not exist in input  {_input_file_path}')
         raise ValueError(f'One of columns {smiles_cols} does not exist in input {_input_file_path}')
 
