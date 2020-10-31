@@ -139,9 +139,9 @@ def eval_single_epoch2(dataloader, model, loss_fn, device):
 
 
 def training_dataloader(model, optimizer, train_loader, loss_fn, max_epochs=1000, bootstrap_runs=1, bootstrap_seed=None, patience=50, device=None):
-    # bootstrap sampling. random 20% as validation set
+    # bootstrap sampling. random 10% as validation set
     sub_data_splits = [(train_idx, test_idx) for train_idx, test_idx in
-                       model_selection.ShuffleSplit(n_splits=bootstrap_runs, test_size=0.2, random_state=bootstrap_seed).split(train_loader.dataset)]
+                       model_selection.ShuffleSplit(n_splits=bootstrap_runs, test_size=0.1, random_state=bootstrap_seed).split(train_loader.dataset)]
 
     # save original inputs
     init_model = model

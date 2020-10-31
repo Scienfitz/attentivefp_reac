@@ -41,7 +41,7 @@ def parse_arguments():
     return args
 
 
-def predict(data_file, model_dir, smiles_col=None, index_col=None, test=False, dropout_samples=0, standardize=False):
+def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False, dropout_samples=0, standardize=False):
     """Calculate predictions of user-specified SMILES.
 
     Arguments:
@@ -49,7 +49,7 @@ def predict(data_file, model_dir, smiles_col=None, index_col=None, test=False, d
         model {str} -- Location of model .pth file
 
     Keyword Arguments:
-        smiles_col {str} -- SMILES column name. Leave as None if file has no column names. (default: {None})
+        smiles_cols {lst} -- lst of smiles column names
         test {bool} -- Run test mode (default: {False})
 
     Returns:
@@ -76,19 +76,20 @@ def predict(data_file, model_dir, smiles_col=None, index_col=None, test=False, d
     model = torch.load(_model_pth_file, map_location=device).to(device)
 
     # chunk data to avoid large amounts of data in memory
-    header = None if smiles_col is None else 'infer'
+    #header = None if smiles_col is None else 'infer'
+    header = smiles_cols
     for chunk_id, chunk in enumerate(pd.read_csv(data_file, sep=None, engine='python', chunksize=10000, header=header,
                                                  nrows=100 if test else None)):
-        # load data
-        if smiles_col is not None:
-            if smiles_col not in chunk.columns:
-                logging.error(f'column {smiles_col} does not exist in input')
-                raise ValueError(f'column {smiles_col} does not exist in input')
-        else:
-            if len(chunk.columns) > 1:
-                logging.warning(
-                    f'Detected {len(chunk.columns)} columns without smiles column defined. Will use column 0 as smiles')
-            smiles_col = chunk.columns[0]
+        # # load data
+        # if smiles_col is not None:
+        #     if smiles_col not in chunk.columns:
+        #         logging.error(f'column {smiles_col} does not exist in input')
+        #         raise ValueError(f'column {smiles_col} does not exist in input')
+        # else:
+        #     if len(chunk.columns) > 1:
+        #         logging.warning(
+        #             f'Detected {len(chunk.columns)} columns without smiles column defined. Will use column 0 as smiles')
+        #     smiles_col = chunk.columns[0]
 
         if index_col is not None:
             if index_col not in chunk.columns:
@@ -100,16 +101,22 @@ def predict(data_file, model_dir, smiles_col=None, index_col=None, test=False, d
 
         # Get mols & standardize
         #
-        chunk['_mol'] = chunk[smiles_col].apply(smiles2mol)
+        chunk['_mol1'] = chunk[smiles_cols[0]].apply(smiles2mol)
+        chunk['_mol2'] = chunk[smiles_cols[1]].apply(smiles2mol)
+        chunk['_mol3'] = chunk[smiles_cols[2]].apply(smiles2mol)
         if standardize:
-            chunk['_mol'] = chunk['_mol'].apply(standardize_mol)
+            chunk['_mol1'] = chunk['_mol1'].apply(standardize_mol)
+            chunk['_mol2'] = chunk['_mol2'].apply(standardize_mol)
+            chunk['_mol3'] = chunk['_mol3'].apply(standardize_mol)
             # put canonical smiles into column
-            chunk['_smiles'] = chunk['_mol'].apply(mol2smiles)
+            chunk['_smiles1'] = chunk['_mol1'].apply(mol2smiles)
+            chunk['_smiles2'] = chunk['_mol2'].apply(mol2smiles)
+            chunk['_smiles3'] = chunk['_mol3'].apply(mol2smiles)
 
-        missing_mols = np.where(chunk['_mol'].isna())[0]
-        if len(missing_mols) > 0:
-            missing_smiles = chunk[smiles_col].iloc[missing_mols].values.astype(str)
-            logger.info(f'Smiles failed to convert into mol: {",".join(missing_smiles)}')
+        # missing_mols = np.where(chunk['_mol'].isna())[0]
+        # if len(missing_mols) > 0:
+        #     missing_smiles = chunk[smiles_col].iloc[missing_mols].values.astype(str)
+        #     logger.info(f'Smiles failed to convert into mol: {",".join(missing_smiles)}')
 
         # convert mols into DGL graphs
         logging.debug(f'calculate graphs')
@@ -131,15 +138,17 @@ def predict(data_file, model_dir, smiles_col=None, index_col=None, test=False, d
         bondFeatureSize = len(bond_featurizer(Chem.MolFromSmiles('CC'))['e'][0])
 
         dglf = DGLFeaturizer(device=device, AtomFeaturizer=atom_featurizer, BondFeaturizer=bond_featurizer)
-        graphs = dglf.featurize_mols(chunk['_mol'])
+        graphs1 = dglf.featurize_mols(chunk['_mol1'])
+        graphs2 = dglf.featurize_mols(chunk['_mol2'])
+        graphs3 = dglf.featurize_mols(chunk['_mol3'])
 
-        good_idx = np.where(np.not_equal(graphs, None))[0]
-        graphs = graphs[good_idx]
+        # good_idx = np.where(np.not_equal(graphs, None))[0]
+        # graphs = graphs[good_idx]
 
-        logging.debug(f'start prediction for {len(graphs)} compounds')
-        preds, std = att_predict(graphs, model, device, batch_size=2000, dropout_samples=dropout_samples)
+        logging.debug(f'start prediction for {len(graphs1)} compounds')
+        preds, std = att_predict(graphs1, graphs2, graphs3, model, device, batch_size=2000, dropout_samples=dropout_samples)
 
-        att_df = pd.DataFrame(np.concatenate([preds, std], axis=1), index=good_idx,
+        att_df = pd.DataFrame(np.concatenate([preds, std], axis=1), #index=good_idx,
                               columns=columns + [f'{c}:std' for c in columns])
         att_df = att_df.reindex(range(len(chunk)), axis=0)
 
@@ -148,13 +157,14 @@ def predict(data_file, model_dir, smiles_col=None, index_col=None, test=False, d
 
         # add std smiles & error message
         if standardize:
-            att_df['_smiles'] = chunk['_smiles']
-        if len(missing_mols) > 0:
-            att_df.loc[att_df.index[missing_mols], 'error'] = 'Smiles conversion failed'
+            att_df['_smiles1'] = chunk['_smiles1']
+            att_df['_smiles2'] = chunk['_smiles2']
+            att_df['_smiles3'] = chunk['_smiles3']
+        # if len(missing_mols) > 0:
+        #     att_df.loc[att_df.index[missing_mols], 'error'] = 'Smiles conversion failed'
 
         logging.info(f'Finished chunk {chunk_id}')
         yield att_df
-
 
 if __name__ == '__main__':
     args = parse_arguments()
@@ -193,9 +203,9 @@ if __name__ == '__main__':
 
     # perform predictions and output results
     try:
-        for cid, df in enumerate(predict(data_file=_input_file_path, model_dir=_model_file_path, smiles_col=smiles_col,
-                                         index_col=index_col, test=args.test, dropout_samples=args.dropout,
-                                         standardize=args.standardize)):
+        for cid, df in enumerate(predict2(data_file=_input_file_path, model_dir=_model_file_path, smiles_cols=smiles_cols,
+                                          index_col=index_col, test=args.test, dropout_samples=args.dropout,
+                                          standardize=args.standardize)):
             df.reindex(sorted(df.columns), axis=1).to_csv(_output_file_writer, sep='\t', index=True, index_label="ID",
                                                           float_format='%.2f', header=False if cid > 0 else True)
             _output_file_writer.flush()
