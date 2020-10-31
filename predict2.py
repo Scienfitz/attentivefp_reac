@@ -143,9 +143,9 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
         graphs3 = dglf.featurize_mols(chunk['_mol3'])
 
         good_idx = np.where(np.not_equal(graphs1, None) | np.not_equal(graphs2, None) | np.not_equal(graphs3, None))[0]
-        graphs1 = graph1[good_idx]
-        graphs2 = graph2[good_idx]
-        graphs3 = graph3[good_idx]
+        graphs1 = graphs1[good_idx]
+        graphs2 = graphs2[good_idx]
+        graphs3 = graphs3[good_idx]
 
         logging.debug(f'start prediction for {len(graphs1)} compounds')
         preds, std = att_predict(graphs1, graphs2, graphs3, model, device, batch_size=2000, dropout_samples=dropout_samples)
