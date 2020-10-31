@@ -77,7 +77,7 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
 
     # chunk data to avoid large amounts of data in memory
     #header = None if smiles_col is None else 'infer'
-    header = smiles_cols
+    header = None
     for chunk_id, chunk in enumerate(pd.read_csv(data_file, sep=None, engine='python', chunksize=10000, header=header,
                                                  nrows=100 if test else None)):
         # # load data
