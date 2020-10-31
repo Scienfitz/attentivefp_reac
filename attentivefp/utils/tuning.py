@@ -102,7 +102,7 @@ def hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparams,
         'dropout':         hp.quniform('dropout', 0, 0.5, 0.05),
         'n_units':         hp.quniform('n_units', 100, 500, 25),
         'n_dense':         hp.quniform('n_dense', 0, 3, 1),
-        'lr':              hp.quniform('lr', -4.5, -2.0, 0.05),
+        'lr':              hp.quniform('lr', -4.0, -2.0, 0.05),
         'weight_decay':    0,
         'batch_size':      batch_size
     }
