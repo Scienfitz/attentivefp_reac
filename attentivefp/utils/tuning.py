@@ -30,7 +30,7 @@ def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epoc
         'n_dense':         hp.quniform('n_dense', 0, 3, 1),
         'lr':              hp.quniform('lr', -4.5, -2.0, 0.05),
         'weight_decay':    0,
-        'batch_size':      256
+        'batch_size':      512
     }
 
     local_dataloader = DataLoader(
