@@ -163,11 +163,13 @@ class AttentiveFPDense2(nn.Module):
         x3 = self.attfp3(g3, node_feats3, edge_feats3)
         x = torch.cat([x1, x2, x3], dim=1)
 
+        print('\n', x1.shape, x.shape)
         if self.n_dense > 0:
             for i in range(len(self.dense)):
                 x = self.dense[i](x)
             x = self.predict(x)
 
+        print('\n'.x.shape)
         return x
 
 class EnsembleAttFP(nn.Module):
