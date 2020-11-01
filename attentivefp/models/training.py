@@ -68,7 +68,6 @@ def train_single_epoch2(model, data_loader, loss_criterion, optimizer, device):
             prediction[(prediction < labels) & (masks == -2)] = labels[(prediction < labels) & (masks == -2)]
             masks[masks < 0] = 1.0
 
-        #print('LOSS:   ', prediction.shape, labels.shape)
         loss = (loss_criterion(prediction, labels) * masks).sum() / masks.sum()
 
         optimizer.zero_grad()
