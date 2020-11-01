@@ -59,6 +59,7 @@ def train_single_epoch2(model, data_loader, loss_criterion, optimizer, device):
         prediction = model(bg1, bg2, bg3,
                            bg1.ndata['hv'], bg2.ndata['hv'], bg3.ndata['hv'],
                            bg1.edata['e'], bg2.edata['e'], bg3.edata['e'])
+        print('\n\n AAA: ', prediction.shape)
 
         # Handle qualified values.
         # Mask -1 = >, -2 = <
@@ -121,6 +122,7 @@ def eval_single_epoch2(dataloader, model, loss_fn, device):
             prediction = model(bg1, bg2, bg3,
                                bg1.ndata['hv'], bg2.ndata['hv'], bg3.ndata['hv'],
                                bg1.edata['e'],  bg2.edata['e'],  bg3.edata['e'])
+            print('\n\n BBB: ', prediction.shape)
 
             # Handle qualified values.
             # Mask -1 = >, -2 = <
