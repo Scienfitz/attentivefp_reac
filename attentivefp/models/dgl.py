@@ -264,7 +264,9 @@ def collate_molgraphs2(data):
     else:
         graphs1, graphs2, graphs3, labels, masks = map(list, zip(*data))
 
-    bg1, bg2, bg3 = dgl.batch(graphs1), dgl.batch(graphs2), dgl.batch(graphs3)
+    bg1 = dgl.batch(graphs1)
+    bg2 = dgl.batch(graphs2)
+    bg3 = dgl.batch(graphs3)
 
     bg1.set_n_initializer(dgl.init.zero_initializer)
     bg1.set_e_initializer(dgl.init.zero_initializer)
