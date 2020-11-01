@@ -169,7 +169,7 @@ class AttentiveFPDense2(nn.Module):
                 x = self.dense[i](x)
             x = self.predict(x)
 
-        print('\n'.x.shape)
+        print('\n', x.shape)
         return x
 
 class EnsembleAttFP(nn.Module):
