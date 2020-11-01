@@ -171,7 +171,7 @@ class AttentiveFPDense2(nn.Module):
             print('\n\nEND ', x.shape)
             x = self.predict(x)
 
-        print('\n\nEND ', x.shape)
+        print('\n\nEND2 ', x.shape)
         return x
 
 class EnsembleAttFP(nn.Module):
