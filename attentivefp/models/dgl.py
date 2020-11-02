@@ -223,7 +223,6 @@ def collate_molgraphs(data):
         graphs, labels, masks = map(list, zip(*data))
 
     bg = dgl.batch(graphs)
-
     bg.set_n_initializer(dgl.init.zero_initializer)
     bg.set_e_initializer(dgl.init.zero_initializer)
 
@@ -504,8 +503,9 @@ class AttentiveFPDense_Ext(nn.Module):
                                                       graph_feat_size=graph_feat_size,
                                                       dropout=dropout,
                                                       n_tasks=n_tasks)
-            attfp.predict = nn.Identity
+            attfp.predict = nn.Identity()
             self.attfps.append(attfp)
+
         self.attfps = nn.ModuleList(self.attfps)
 
         interface_layer_size = self.n_graphs*self.graph_feat_size + self.tab_feat_size
