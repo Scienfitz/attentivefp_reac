@@ -192,7 +192,7 @@ def main(args):
     hyperparameters = {'node_feat_size':  atomFeatureSize,  # 74 for canonical
                        'edge_feat_size':  bondFeatureSize,  # 12 for canonical
                        'n_graphs':        len(lst_mols),
-                       'tab_feat_size':   len(tab_prep[0]),
+                       'tab_feat_size':   len(tab_prep[0]) if tab_prep else 0,
                        'num_layers':      3,
                        'num_timesteps':   2,
                        'graph_feat_size': 200,
