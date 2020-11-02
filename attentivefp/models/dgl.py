@@ -495,7 +495,7 @@ class AttentiveFPDense_Ext(nn.Module):
 
         # Augmented: several graphs
         self.attfps = []
-        for k in range(n_graphs):
+        for k in range(self.n_graphs):
             attfp = AttentiveFPPredictor(node_feat_size=node_feat_size,
                                                       edge_feat_size=edge_feat_size,
                                                       num_layers=num_layers,
@@ -543,6 +543,9 @@ class AttentiveFPDense_Ext(nn.Module):
     def forward(self, *args):
         # Input has variable length consisting of n_graphs*3 variables
         # Every triplet is in order: graphs1, node_feats1, edge_feats1, raphs2, node_feats2, edge_feats2, ...
+
+        print(args)
+
         tabs = args[0]
         args = args[1:]
         vals = []
