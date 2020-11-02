@@ -608,7 +608,7 @@ def collate_molgraphs_Ext(data):
     for graph in graphs:
         graph = dgl.batch(graph)
         graph.set_n_initializer(dgl.init.zero_initializer)
-        graph.set_n_initializer(dgl.init.zero_initializer)
+        graph.set_e_initializer(dgl.init.zero_initializer)
 
     if labels is None:
         labels = torch.ones(labels.shape)
