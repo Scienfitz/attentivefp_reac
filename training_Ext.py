@@ -125,7 +125,7 @@ def main(args):
             logging.error(f'file for tabular features not found: {tab_pp_file}')
             raise IOError(f'file for tabular features not found: {tab_pp_file}')
 
-        with open('','rb') as fh:
+        with open(tab_pp_file,'rb') as fh:
             tab_pp = pickle.load(fh)
 
     save_dir = args.outdir if os.path.isabs(args.outdir) else os.path.join(os.getcwd(), args.outdir)
