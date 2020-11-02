@@ -540,13 +540,12 @@ class AttentiveFPDense_Ext(nn.Module):
                 'n_tasks':         self.n_tasks,
                 }
 
-    def forward(self, *args):
+    def forward(self, tabs, *args):
         # Input has variable length consisting of n_graphs*3 variables
         # Every triplet is in order: graphs1, node_feats1, edge_feats1, raphs2, node_feats2, edge_feats2, ...
-        tabs = args[0]
-        args = args[1:]
+        #tabs = args[0]
+        #args = args[1:]
         vals = []
-
         for k in range(self.n_graphs):
             dat = args[(k*3):(k*3+2)]
             print('\n\n ASDASD: ', len(dat))

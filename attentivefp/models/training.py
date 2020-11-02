@@ -87,7 +87,6 @@ def train_single_epoch_Ext(model, data_loader, loss_criterion, optimizer, device
 
         g_data = []
         for g in graphs:
-            print(g)
             g.to(device)
             g_data += [g, g.ndata['hv'], g.edata['e']]
         labels = labels.to(device)
