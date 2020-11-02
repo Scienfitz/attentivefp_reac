@@ -85,7 +85,7 @@ def hyperopt(graphs, task_labels, mask_missing, hyperparams, max_evals, max_epoc
 
     return best_params
 
-def hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparams, max_evals, max_epochs, patience, device, seed, batch_size=256):
+def hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparams, max_evals, max_epochs, patience, device, seed, batch_size=512):
     # Augmented Version: graphs is now a list of lists. entries of each list will be treated as a separate graph
     logger.info(f'Running {max_evals} hyperparameter optimization trials')
 
@@ -100,8 +100,8 @@ def hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparams,
         'num_timesteps':   hp.quniform('num_timesteps', 1, 4, 1),
         'graph_feat_size': hp.quniform('graph_feat_size', 150, 400, 10),
         'dropout':         hp.quniform('dropout', 0, 0.5, 0.05),
-        'n_units':         hp.quniform('n_units', 100, 500, 25),
-        'n_dense':         hp.quniform('n_dense', 0, 3, 1),
+        'n_units':         hp.quniform('n_units', 100, 600, 25),
+        'n_dense':         hp.quniform('n_dense', 1, 3, 1),
         'lr':              hp.quniform('lr', -4.0, -2.0, 0.05),
         'weight_decay':    0,
         'batch_size':      batch_size

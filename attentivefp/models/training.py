@@ -58,7 +58,7 @@ def train_single_epoch2(model, data_loader, loss_criterion, optimizer, device):
 
         prediction = model(bg1, bg2, bg3,
                            bg1.ndata['hv'], bg2.ndata['hv'], bg3.ndata['hv'],
-                           bg1.edata['e'], bg2.edata['e'], bg3.edata['e'])
+                           bg1.edata['e'],  bg2.edata['e'],  bg3.edata['e'])
         print('\n\n PRED: ', prediction.shape)
         #print('\n\n AAA: ', prediction[0, 0])
         #print('\n\n BBB: ', prediction[0, 1])

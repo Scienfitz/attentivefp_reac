@@ -110,8 +110,8 @@ def main(args):
     df = pd.read_csv(input_file, sep=None, engine='python', nrows=100 if args.test else None)
     logger.info(f'Imported {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
-    if args.frac != 1.0:
-        df = df.sample(frac=args.frac, random_state=args.seed)
+    df = df.sample(frac=args.frac, random_state=args.seed)
+    if args.frac < 1.0:
         logger.info(f'Reduced dataframe to {df.shape[0]} rows with columns: {", ".join(df.columns)}')
 
     task_cols   = args.task_cols
@@ -189,7 +189,7 @@ def main(args):
     if args.hyper_evals:
         # do hyper evals
         hyperparameters = tuning.hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparameters, args.hyper_evals,
-                                          args.max_epochs, args.patience, device, args.seed)
+                                          args.max_epochs, args.patience, device, args.seed, batch_size=args.batchsize)
 
     hyperparameters['n_tasks'] = task_labels.shape[1]
 
