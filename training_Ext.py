@@ -99,7 +99,7 @@ class TabularPP(object):
         data[cols] = x
 
         return data
-
+    
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='AttentiveFP Training')
