@@ -19,7 +19,7 @@ class TabularPP(object):
         else:
             assert imputer in ['KNN'], 'The imputer selected can only be "KNN"'
 
-    def fit(self, data):
+    def fit(self, data, d=0.02):
         # Columns that only have 0 and 1s (like Fingerprints) should not be scaled
         cols = data.columns[
             ~data.apply(lambda x: set(np.unique(x)) in [set([0.0, 1.0]), set([0.0, 1.0, np.nan])], axis=0)]
@@ -34,6 +34,14 @@ class TabularPP(object):
         x = self.scaler_impute.inverse_transform(x)
         x = self.scaler_scale.fit_transform(x)
 
+        data[cols] = x
+        self.prctl_up = {}
+        self.prctl_lo = {}
+        for a, b in zip(data[cols].quantile(1.0 - d).index, data[cols].quantile(1.0 - d).values):
+            self.prctl_up[a] = b
+        for a, b in zip(data[cols].quantile(0.0 + d).index, data[cols].quantile(0.0 + d).values):
+            self.prctl_lo[a] = b
+
     def transform(self, data):
         cols = self.cols
         data = copy(data)
@@ -44,5 +52,9 @@ class TabularPP(object):
         x = self.scaler_impute.inverse_transform(x)
         x = self.scaler_scale.transform(x)
         data[cols] = x
+
+        for col in cols:
+            data.loc[data[col] > self.prctl_up[col], col] = self.prctl_up[col]
+            data.loc[data[col] < self.prctl_lo[col], col] = self.prctl_lo[col]
 
         return data
