@@ -84,7 +84,7 @@ def train_single_epoch_Ext(model, data_loader, loss_criterion, optimizer, device
     model.train()
     for batch_id, batch_data in enumerate(data_loader):
         labels, masks, tabs, *graphs = batch_data
-
+        print(graphs)
         g_data = []
         for g in graphs:
             g.to(device)
