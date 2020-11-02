@@ -114,7 +114,7 @@ def main(args):
             logging.error(f'file for tabular features not found: {tab_file}')
             raise IOError(f'file for tabular features not found: {tab_file}')
 
-        df_tab = pd.read_csv(tab_file, sep=None, engine='python')
+        df_tab = pd.read_csv(tab_file, sep=None, engine='python', header=0)
         logger.info(f'Imported tabular features {df_tab.shape[0]} rows with {df_tab.shape[1]} columns')
         df_tab = df_tab[df.index]
 
