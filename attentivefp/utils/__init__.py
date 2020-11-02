@@ -22,7 +22,7 @@ class TabularPP(object):
     def fit(self, data, d=0.02):
         # Columns that only have 0 and 1s (like Fingerprints) should not be scaled
         cols = data.columns[
-            ~data.apply(lambda x: set(np.unique(x)) in [set([0.0, 1.0]), set([0.0, 1.0, np.nan])], axis=0)]
+            ~data.apply(lambda x: set(np.unique(x)) in [{0.0, 1.0}, {0.0, 1.0, np.nan}], axis=0)]
         self.cols = cols
 
         data = copy(data)
