@@ -605,10 +605,12 @@ def collate_molgraphs_Ext(data):
 
     labels, masks, tabs, *graphs = map(list, zip(*data))
 
-    for graph in graphs:
-        graph = dgl.batch(graph)
-        graph.set_n_initializer(dgl.init.zero_initializer)
-        graph.set_e_initializer(dgl.init.zero_initializer)
+    gs = []
+    for g in graphs:
+        g = dgl.batch(g)
+        g.set_n_initializer(dgl.init.zero_initializer)
+        g.set_e_initializer(dgl.init.zero_initializer)
+        gs.append(g)
 
     if labels is None:
         labels = torch.ones(labels.shape)
@@ -627,4 +629,4 @@ def collate_molgraphs_Ext(data):
     #if tabs is not None:
     tabs = torch.stack(tabs, dim=0)
 
-    return (labels, masks, tabs, *graphs)
+    return (labels, masks, tabs, *gs)
