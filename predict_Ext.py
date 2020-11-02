@@ -153,11 +153,11 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
         good_idx = np.not_equal(graphs[0], None)
         for graph in graphs[1:]:
             good_idx |= np.not_equal(graph, None)
-        good_idx = np.where(good_idx)[0].astype(int)
+        good_idx = np.where(good_idx)[0]#.astype(int)
 
         graphs   = [graph[good_idx] for graph in graphs]
-        #tab_prep = list(np.array(tab_prep[good_idx]))
-        tab_prep = tab_prep[good_idx]
+        tab_prep = list(np.array(tab_prep)[good_idx])
+        #tab_prep = tab_prep[good_idx]
 
         logging.debug(f'start prediction for {len(graphs[0])} compounds')
         preds, std = predict_Ext(model, device, tab_prep, *graphs, batch_size=1024, dropout_samples=dropout_samples)
