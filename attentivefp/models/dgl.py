@@ -549,7 +549,7 @@ class AttentiveFPDense_Ext(nn.Module):
 
         for k in range(self.n_graphs):
             dat = args[(k*3):(k*3+2)]
-            val = self.attfps[k](*dat)
+            val = self.attfps[k](dat[0], dat[1], dat[2])
             vals.append(val)
 
         if self.tab_feat_size > 0:
