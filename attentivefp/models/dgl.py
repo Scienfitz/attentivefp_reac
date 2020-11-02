@@ -544,7 +544,7 @@ class AttentiveFPDense_Ext(nn.Module):
         # Input has variable length consisting of n_graphs*3 variables
         # Every triplet is in order: graphs1, node_feats1, edge_feats1, raphs2, node_feats2, edge_feats2, ...
 
-        print(args)
+        print(len(args))
 
         tabs = args[0]
         args = args[1:]
