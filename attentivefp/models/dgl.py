@@ -624,7 +624,7 @@ def collate_molgraphs_Ext(data):
     #     tabs = torch.ones(labels.shape)
     # else:
     #     tabs = torch.stack(tabs, dim=0)
-    if tabs is not None:
-        tabs = torch.stack(tabs, dim=0)
+    #if tabs is not None:
+    tabs = torch.stack(tabs, dim=0)
 
     return (labels, masks, tabs, *graphs)
