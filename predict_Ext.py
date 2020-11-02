@@ -135,9 +135,6 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
             atom_featurizer = CanonicalAtomFeaturizer(atom_data_field='hv')
             bond_featurizer = CanonicalBondFeaturizer()
 
-        atomFeatureSize = len(atom_featurizer(Chem.MolFromSmiles('CC'))['hv'][0])
-        bondFeatureSize = len(bond_featurizer(Chem.MolFromSmiles('CC'))['e'][0])
-
         dglf = DGLFeaturizer(device=device, AtomFeaturizer=atom_featurizer, BondFeaturizer=bond_featurizer)
         graphs = [dglf.featurize_mols(chunk[f'_mol{k}']) for k in range(len(smiles_cols))]
 
@@ -145,6 +142,9 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
         for graph in graphs[1:]:
             good_idx |= np.not_equal(graph, None)
         good_idx = np.where(good_idx)[0].astype(int)
+        nBadReactions = chunk.shape[0]-good_idx.shape[0]
+        if nBadReactions > 0:
+            logger.warning(f'Found {nBadReactions} reactions with erroneous graphs')
 
         graphs   = [graph[good_idx] for graph in graphs]
         #tab_prep = list(np.array(tab_prep)[good_idx])
