@@ -155,7 +155,7 @@ def main(args):
     if not args.skip_cv or args.hyper_evals or args.baseline:
         # Note that we only pass the first series of mols to the splitter.
         # Splittings that consider info from all mol series are not supported yet
-        logger.warning('The cv split is created only using features for the first SMILES column')
+        logger.warning('The cv split is created only using features for the first SMILES column, if any (e.g. random)')
         cvFolds = splitter.getSplit(lst_mols[0], task_labels, split=args.split, n_splits=args.split_n, groups=grp,
                                     random_state=args.seed)
 
