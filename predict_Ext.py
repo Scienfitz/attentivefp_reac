@@ -42,6 +42,7 @@ def parse_arguments():
     # Custom arguments
     parser.add_argument('--tab_file',          help='File for the tabular features', required=False, type=str, default=None)
     parser.add_argument('--tab_postproc',      help='File for the tabular postprocessing/scaling', required=False, type=str, default=None)
+    parser.add_argument('--chunksize',         help='Perform prediction in chunks of this size', required=False, type=int, default=5000)
 
     args = parser.parse_args()
     return args
@@ -84,7 +85,7 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
     # chunk data to avoid large amounts of data in memory
     #header = None if smiles_col is None else 'infer'
     header = 0
-    for chunk_id, chunk in enumerate(pd.read_csv(data_file, sep=None, engine='python', chunksize=10000, header=header,
+    for chunk_id, chunk in enumerate(pd.read_csv(data_file, sep=None, engine='python', chunksize=args.chunksize, header=header,
                                                  nrows=100 if test else None)):
         # # load data
         # if smiles_col is not None:
@@ -155,7 +156,7 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
         good_idx = np.where(good_idx)[0]
 
         graphs   = [graph[good_idx] for graph in graphs]
-        tab_prep = tab_prep[good_idx]
+        tab_prep = list(np.array(tab_prep[good_idx]))
 
         logging.debug(f'start prediction for {len(graphs[0])} compounds')
         preds, std = predict_Ext(model, device, tab_prep, *graphs, batch_size=1024, dropout_samples=dropout_samples)
@@ -218,7 +219,7 @@ if __name__ == '__main__':
             logging.error(f'file for tabular features not found: {tab_file}')
             raise IOError(f'file for tabular features not found: {tab_file}')
 
-        df_tab_chunks = list(pd.read_csv(tab_file, sep=None, engine='python', chunksize=10000))
+        df_tab_chunks = list(pd.read_csv(tab_file, sep=None, engine='python', chunksize=args.chunksize))
 
     tab_pp = None
     if args.tab_postproc:
