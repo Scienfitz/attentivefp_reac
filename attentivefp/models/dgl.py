@@ -124,12 +124,13 @@ class AttentiveFPDense2(nn.Module):
                                            dropout         = dropout,
                                            n_tasks=n_tasks)
 
-
+        self.attfp1.predict = nn.Identity()
+        self.attfp2.predict = nn.Identity()
+        self.attfp3.predict = nn.Identity()
+        
         if n_dense > 0:
             # disable dgllife attfp predict layer by replacing with nn.Identity
-            self.attfp1.predict = nn.Identity()
-            self.attfp2.predict = nn.Identity()
-            self.attfp3.predict = nn.Identity()
+
 
             self.dense = []
             for d in range(n_dense):
