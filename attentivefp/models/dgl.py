@@ -548,7 +548,7 @@ class AttentiveFPDense_Ext(nn.Module):
         vals = []
         for k in range(self.n_graphs):
             dat = args[(k*3):(k*3+2)]
-            print('\n\n ASDASD: ', len(dat))
+            print('\n\n ASDASD: ', k, (k*3), (k*3+2), len(dat))
             val = self.attfps[k](dat[0], dat[1], dat[2])
             vals.append(val)
 
