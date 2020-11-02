@@ -135,7 +135,7 @@ def preprocess_Ext(df, smiles_cols, task_cols, id_col=None, grp_col=None, standa
         tab_data = tab_pp.transform(df_tab) if tab_pp else df_tab
 
         for k in range(tab_data.values.shape[0]):
-            tab_prep.append(torch.tensor(tab_data.values[k, :]))
+            tab_prep.append(torch.tensor(tab_data.values[k, :]), dtype=torch.float)
 
     return df, task_labels, mask_missing, tab_prep
 
