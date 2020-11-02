@@ -121,7 +121,7 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
 
         # convert mols into DGL graphs
         logging.debug(f'Preparing tabular features')
-        tab_prep = None
+        tab_prep = [torch.tensor([np.nan])]*chunk.shape[0]
         if tab_chunks:
             tab_prep = []
             tab_data = tab_pp.transform(tab_chunks[chunk_id].values) if tab_pp else tab_chunks[chunk_id].values
