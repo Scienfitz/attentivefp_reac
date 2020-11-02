@@ -227,7 +227,7 @@ if __name__ == '__main__':
             logging.error(f'file for tabular features not found: {tab_pp_file}')
             raise IOError(f'file for tabular features not found: {tab_pp_file}')
 
-        with open('', 'rb') as fh:
+        with open(tab_pp_file, 'rb') as fh:
             tab_pp = pickle.load(fh)
 
     index_col = args.index_col
