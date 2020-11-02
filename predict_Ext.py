@@ -157,7 +157,7 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
 
             for k in range(tab_data.values.shape[0]):
                 if k in good_idx:
-                    tab_prep.append(torch.tensor(tab_data.values[k, :]))
+                    tab_prep.append(torch.tensor(tab_data.values[k, :], dtype=torch.float))
 
         logging.debug(f'start prediction for {len(graphs[0])} compounds')
         preds, std = predict_Ext(model, device, tab_prep, *graphs, batch_size=1024, dropout_samples=dropout_samples)
