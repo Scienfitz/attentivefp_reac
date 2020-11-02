@@ -147,19 +147,17 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
             logger.warning(f'Found {nBadReactions} reactions with erroneous graphs')
 
         graphs   = [graph[good_idx] for graph in graphs]
-        #tab_prep = list(np.array(tab_prep)[good_idx])
 
         # Prepare tabular features
         logging.debug(f'Preparing tabular features')
         tab_prep = [torch.tensor([np.nan])]*chunk.shape[0]
         if tab_chunks:
             tab_prep = []
-            tab_data = tab_pp.transform(tab_chunks[chunk_id].values) if tab_pp else tab_chunks[chunk_id].values
+            tab_data = tab_pp.transform(tab_chunks[chunk_id]) if tab_pp else tab_chunks[chunk_id]
 
-            for k in range(tab_data.shape[0]):
+            for k in range(tab_data.values.shape[0]):
                 if k in good_idx:
-                    tab_prep.append(torch.tensor(tab_data[k, :]))
-        #tab_prep = tab_prep[good_idx]
+                    tab_prep.append(torch.tensor(tab_data.values[k, :]))
 
         logging.debug(f'start prediction for {len(graphs[0])} compounds')
         preds, std = predict_Ext(model, device, tab_prep, *graphs, batch_size=1024, dropout_samples=dropout_samples)
@@ -175,9 +173,6 @@ def blafunc(data_file, model_dir, tab_chunks=None, tab_pp=None, smiles_cols=None
         if standardize:
             for k in range(len(smiles_cols)):
                 att_df[f'_smiles{k}'] = chunk[f'_smiles{k}']
-
-        # if len(missing_mols) > 0:
-        #     att_df.loc[att_df.index[missing_mols], 'error'] = 'Smiles conversion failed'
 
         logging.info(f'Finished chunk {chunk_id}')
         yield att_df
