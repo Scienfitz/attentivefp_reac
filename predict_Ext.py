@@ -217,7 +217,7 @@ if __name__ == '__main__':
             logging.error(f'file for tabular features not found: {tab_file}')
             raise IOError(f'file for tabular features not found: {tab_file}')
 
-        df_tab_chunks = list(pd.read_csv(tab_file, sep=None, engine='python', chunksize=args.chunksize))
+        df_tab_chunks = list(pd.read_csv(tab_file, sep=None, engine='python', chunksize=args.chunksize, header=0))
 
     tab_pp = None
     if args.tab_postproc:
