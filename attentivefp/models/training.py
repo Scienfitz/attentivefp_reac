@@ -91,8 +91,8 @@ def train_single_epoch_Ext(model, data_loader, loss_criterion, optimizer, device
             g_data += [g, g.ndata['hv'], g.edata['e']]
         labels = labels.to(device)
         masks  = masks.to(device)
-        if tabs is not None:
-            tabs = tabs.to(device)
+        #if tabs is not None:
+        tabs = tabs.to(device)
 
         prediction = model(tabs, *g_data)
 
@@ -187,8 +187,8 @@ def eval_single_epoch_Ext(dataloader, model, loss_fn, device):
                 g_data += [g, g.ndata['hv'], g.edata['e']]
             labels = labels.to(device)
             masks = masks.to(device)
-            if tabs is not None:
-                tabs = tabs.to(device)
+            #if tabs is not None:
+            tabs = tabs.to(device)
 
             prediction = model(tabs, *g_data)
 
