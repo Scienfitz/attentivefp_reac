@@ -158,7 +158,7 @@ def hyperopt2(graphs1, graphs2, graphs3, task_labels, mask_missing, hyperparams,
 
     return best_params
 
-def hyperopt_Ext(task_labels, mask_missing, tabs, hyperparams, device, *graphs, max_evals=20, max_epochs=1000, patience=100, seed=None, batch_size=512):
+def hyperopt_Ext(task_labels, mask_missing, tabs, hyperparams, device, *graphs, max_evals=20, max_epochs=1000, patience=100, seed=None, batch_size=512, nHPRounds=3):
     # Augmented Version: graphs is now a list of lists. entries of each list will be treated as a separate graph
     logger.info(f'Running {max_evals} hyperparameter optimization trials')
 
@@ -191,29 +191,31 @@ def hyperopt_Ext(task_labels, mask_missing, tabs, hyperparams, device, *graphs, 
     )
 
     def hp_objective(hyp):
-        local_model = AttentiveFPDense_Ext(node_feat_size  = hyperparams['node_feat_size'],
-                                           edge_feat_size  = hyperparams['edge_feat_size'],
-                                           n_graphs        = hyperparams['n_graphs'],
-                                           tab_feat_size   = hyperparams['tab_feat_size'],
-                                           num_layers      = int(hyp['num_layers']),
-                                           num_timesteps   = int(hyp['num_timesteps']),
-                                           graph_feat_size = int(hyp['graph_feat_size']),
-                                           dropout         = hyp['dropout'],
-                                           n_dense         = int(hyp['n_dense']),
-                                           n_units         = int(hyp['n_units']),
-                                           n_tasks         = task_labels.shape[1],
-                                           )
-        local_model     = local_model.to(device)
-        local_optimizer = torch.optim.Adam(local_model.parameters(),
-                                           lr           = np.power(10, hyp['lr']),
-                                           weight_decay = hyp['weight_decay'])
+        res = []
+        for kRun in range(nHPRounds):
+            print(f'\n\n##################### HP Round {kRun+1}\n')
+            local_model = AttentiveFPDense_Ext(node_feat_size  = hyperparams['node_feat_size'],
+                                               edge_feat_size  = hyperparams['edge_feat_size'],
+                                               n_graphs        = hyperparams['n_graphs'],
+                                               tab_feat_size   = hyperparams['tab_feat_size'],
+                                               num_layers      = int(hyp['num_layers']),
+                                               num_timesteps   = int(hyp['num_timesteps']),
+                                               graph_feat_size = int(hyp['graph_feat_size']),
+                                               dropout         = hyp['dropout'],
+                                               n_dense         = int(hyp['n_dense']),
+                                               n_units         = int(hyp['n_units']),
+                                               n_tasks         = task_labels.shape[1])
+            local_model     = local_model.to(device)
+            local_optimizer = torch.optim.Adam(local_model.parameters(),
+                                               lr           = np.power(10, hyp['lr']),
+                                               weight_decay = hyp['weight_decay'])
 
-        # run a single training using a fixed seed for comparison
-        summary = training_dataloader_Ext(local_model, local_optimizer, local_dataloader,
-                                       loss_fn = nn.SmoothL1Loss(reduction='none'), patience = patience, device=device,
-                                       bootstrap_runs=1, bootstrap_seed = seed, max_epochs=max_epochs)
-
-        return summary[0]['final_loss_val']
+            # run a single training using a fixed seed for comparison
+            summary = training_dataloader_Ext(local_model, local_optimizer, local_dataloader,
+                                           loss_fn = nn.SmoothL1Loss(reduction='none'), patience = patience, device=device,
+                                           bootstrap_runs=1, bootstrap_seed = seed+kRun, max_epochs=max_epochs)
+            res.append(summary[0]['final_loss_val'])
+        return np.mean(res)
 
     trials = Trials()
     best = fmin(hp_objective, space, algo=tpe.suggest, max_evals=max_evals, trials=trials)
