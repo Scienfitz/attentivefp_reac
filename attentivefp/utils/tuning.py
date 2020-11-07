@@ -193,7 +193,7 @@ def hyperopt_Ext(task_labels, mask_missing, tabs, hyperparams, device, *graphs, 
     def hp_objective(hyp):
         res = []
         for kRun in range(nHPRounds):
-            print(f'\n\n##################### HP Round {kRun+1}\n')
+            print(f'\n\n##################### Trial Sub-Round {kRun+1}\n')
             local_model = AttentiveFPDense_Ext(node_feat_size  = hyperparams['node_feat_size'],
                                                edge_feat_size  = hyperparams['edge_feat_size'],
                                                n_graphs        = hyperparams['n_graphs'],
@@ -215,6 +215,7 @@ def hyperopt_Ext(task_labels, mask_missing, tabs, hyperparams, device, *graphs, 
                                            loss_fn = nn.SmoothL1Loss(reduction='none'), patience = patience, device=device,
                                            bootstrap_runs=1, bootstrap_seed = seed+kRun, max_epochs=max_epochs)
             res.append(summary[0]['final_loss_val'])
+
         return np.mean(res)
 
     trials = Trials()

@@ -150,7 +150,7 @@ def predict2(data_file, model_dir, smiles_cols=None, index_col=None, test=False,
         logging.debug(f'start prediction for {len(graphs1)} compounds')
         preds, std = att_predict(graphs1, graphs2, graphs3, model, device, batch_size=2000, dropout_samples=dropout_samples)
 
-        att_df = pd.DataFrame(np.concatenate([preds, std], axis=1), #index=good_idx,
+        att_df = pd.DataFrame(np.concatenate([preds, std], axis=1), index=good_idx,
                               columns=columns + [f'{c}:std' for c in columns])
         att_df = att_df.reindex(range(len(chunk)), axis=0)
 

@@ -205,8 +205,9 @@ def main(args):
 
     if args.hyper_evals:
         # do hyper evals
-        hyperparameters = tuning.hyperopt_Ext(task_labels, mask_missing, tab_prep, hyperparameters, device, *graphs, max_evals=args.hyper_evals,
-                                          max_epochs=args.max_epochs, patience= args.patience, seed = args.seed, batch_size=args.batchsize)
+        hyperparameters = tuning.hyperopt_Ext(task_labels, mask_missing, tab_prep, hyperparameters, device, *graphs,
+                                              max_evals=args.hyper_evals, max_epochs=args.max_epochs,
+                                              patience= args.patience, seed = args.seed, batch_size=args.batchsize)
 
     hyperparameters['n_tasks'] = task_labels.shape[1]
 
