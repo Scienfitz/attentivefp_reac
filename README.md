@@ -1,6 +1,6 @@
 # SMR Deep Learning using Attentive Fingerprints #
 
-This repo implements the workflows to use **Attentive Fingerprint** with small molecule data.
+This repo implements the workflows to use **Attentive Fingerprint** with small molecule data. This is an extension for reations.
 
 It includes workflows for:
 * Training
