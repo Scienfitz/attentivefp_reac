@@ -12,3 +12,7 @@ It includes workflows for:
 This repo uses Pytorch as the DL library and is build around the [DGL library](https://github.com/awslabs/dgl-lifesci).
 
 AttentiveFP were introduced in the publication [Pushing the Boundaries of Molecular Representation for Drug Discovery with the Graph Attention Mechanism](https://www.ncbi.nlm.nih.gov/pubmed/31408336).
+
+
+### Reaction Extension
+files training_Ext.py and predict2.py contain the added functionality
